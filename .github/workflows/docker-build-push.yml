@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - master  # Chạy workflow khi có thay đổi trong nhánh master
+      - main  # Chạy workflow khi có thay đổi trong nhánh master
   workflow_dispatch: # Cho phép chạy thủ công workflow
 
 jobs:
