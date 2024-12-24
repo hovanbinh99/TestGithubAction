@@ -1,66 +1,28 @@
-name: TestGithubAction
+name: Build and Push Docker Image
+
 on:
   push:
-    branches: [ main ]
-    # 
+    branches:
+      - master  # Chạy workflow khi có thay đổi trong nhánh master
+  workflow_dispatch: # Cho phép chạy thủ công workflow
+
 jobs:
-  docker:
-    # 環境を定義
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Login Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        id: buildx
-      
-      # 最適化
-      # - name: Cache Docker Image Layers
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: /tmp/.buildx-cache
-      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-buildx-
-      
-      # CLI パフォーマンスを向上させる
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v2
-        id: docker_build
-        with:
-          context: ./
-          file: ./Dockerfile
-          builder: ${{ steps.buildx.outputs.name }}
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/TestGithubAction
-          # cache-from: type=local,src=/tmp/.buildx-cache
-          # cache-to: type=local,dest=/tmp/.buildx-cache
-
-      #確認
-      - name: Verify
-        run: echo ${{ steps.docker_build.outputs.digest }}
-        
- # Job 2: Deploy
-  deploy:
-    needs: docker
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to server
-       # action　"appleboy/ssh-action"　を使用して、SSH 経由でイメージをサーバーにデプロイする
-        uses: appleboy/ssh-action@v0.1.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/TestGithubAction:${{ github.sha }}
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-            sudo docker run -d -p 3000:3000 --name TestGithubAction-container ${{ secrets.DOCKERHUB_USERNAME }}/TestGithubAction:${{ github.sha }}
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAMEE }}
+        password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME  }}/test-action-github:latest
